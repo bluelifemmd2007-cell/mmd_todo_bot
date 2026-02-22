@@ -1,57 +1,52 @@
+import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-tasks = []
+
+OWNER_ID = 626780353  
+
+def is_owner(user_id):
+    return user_id == OWNER_ID
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hi,Welcome")
+    await update.message.reply_text("سلام! ربات فعال شد و همه می‌تونن ازش استفاده کنن.")
 
-async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Please add your task,eg:    /add   study lesson ")
-        return
-    tasks.append(" ".join(context.args))
-    await update.message.reply_text("Your task has been added")
+async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("آیتم اضافه شد.")
 
-async def list_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not tasks:
-        await update.message.reply_text("No task registered")
-        return
-    text = "\n".join(f"{i+1}. {t}" for i, t in enumerate(tasks))
-    await update.message.reply_text(text)
+async def list_items(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("لیست آیتم‌ها:")
 
-# -------------------------
-# DELETE FUNCTION (اضافه شد)
-# -------------------------
-async def delete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Please enter the task number to delete. Example: /delete 2")
+
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    uid = update.effective_user.id
+
+    if not is_owner(uid):
+        await update.message.reply_text("⛔ فقط صاحب ربات اجازه این کار را دارد.")
         return
 
-    try:
-        index = int(context.args[0]) - 1
-    except:
-        await update.message.reply_text("Only numbers are allowed.")
-        return
+    await update.message.reply_text("✔️ شما صاحب ربات هستید و دسترسی کامل دارید.")
 
-    if index < 0 or index >= len(tasks):
-        await update.message.reply_text("This task number does not exist.")
-        return
 
-    removed = tasks.pop(index)
-    await update.message.reply_text(f"Task '{removed}' has been deleted.")
 
 def main():
-    app = ApplicationBuilder().token("8498758893:AAGBLW_HX63BJ1xLSVVZPGT-9jXOj2VmtTE").build()
+    TOKEN = os.getenv("BOT_TOKEN")
+
+    if not TOKEN:
+        raise RuntimeError("BOT_TOKEN environment variable is not set.")
+
+    app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("add", add_task))
-    app.add_handler(CommandHandler("list", list_tasks))
+    app.add_handler(CommandHandler("add", add))
+    app.add_handler(CommandHandler("list", list_items))
+    app.add_handler(CommandHandler("admin", admin))
 
-    
-    app.add_handler(CommandHandler("delete", delete_task))
-
+    print("Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
+
+  
